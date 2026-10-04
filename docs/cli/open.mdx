@@ -34,10 +34,12 @@ One `reticle_open` line, whose fields say which of four things happened.
 <Note>
   `connected` is measured, not assumed. This command polls for a **new** session rather than printing
   `{"opened": url}` unconditionally, so a run where nothing opened no longer looks like one where it did.
-  When the launcher itself cannot run, there is no `opened` field at all. Real capture:
+  When the launcher itself cannot run, there is no `opened` field at all, and `recovery` names the
+  Reticle-owned browser a headless machine needs instead (`reticle_lease`, or `drive` from a shell).
+  Real capture:
 
 ```
-{"event":"reticle_open","port":4499,"error":"could not launch a browser: spawn open ENOENT","recovery":"Nothing was opened. This command asks the OS to open a url in your default browser (`open` on this platform) and that failed, so the fix is on the OS side: open the url yourself, or set a default browser."}
+{"event":"reticle_open","port":4498,"error":"could not launch a browser: spawn open ENOENT","recovery":"Nothing was opened. This command asks the OS to open a url in your default browser (`open` on this platform) and that failed. On a machine with no desktop browser (CI, a container, an SSH session) use a Reticle-owned headless browser instead: an agent acquires one with reticle_run { tool: \"reticle_lease\", args: { action: \"acquire\", url: \"http://localhost:5173\" } }, and from a shell `RETICLE_PORT=4498 npx @reticlehq/server drive http://localhost:5173` asks this daemon for the same thing. Otherwise open the url yourself, or set a default browser."}
 ```
 
 Calling it with no URL when nothing has connected is the other `error` shape. It exits `0`, because reporting "there is nothing to show you" is a complete answer. Real capture, with the sentence break shown as `...`:

@@ -1,3 +1,5 @@
+import { ReticleTool } from '@reticlehq/core';
+
 /**
  * What `reticle open` says when it launched a URL and no session appeared.
  *
@@ -36,5 +38,26 @@ export function openFailureNote(port: number, requestedPort: number): string {
     `own connect failures there, including the one it refuses to make from a ` +
     `non-localhost host, which needs BOTH allowNonLocalhost: true AND a pairing token ` +
     `(~/.reticle/pairing-token) — the flag alone is not sufficient.`
+  );
+}
+
+/**
+ * What `reticle open` says when the OS launcher itself could not run (`spawn xdg-open ENOENT`).
+ *
+ * It used to end "open the url yourself, or set a default browser", which is no help in a container
+ * or on CI: there is no browser to set, and the only way in is one Reticle owns. `init` already falls
+ * back to a lease here. `open` does not open one itself, because it exits straight away and a lease
+ * nobody holds is reaped unseen, so it names the two routes that do: `reticle_lease` for an agent,
+ * and `drive`, which asks this same daemon for one from a shell.
+ */
+export function openLaunchRecovery(url: string, launcher: string, port: number): string {
+  return (
+    'Nothing was opened. This command asks the OS to open a url in your default browser ' +
+    `(\`${launcher}\` on this platform) and that failed. On a machine with no desktop browser (CI, ` +
+    'a container, an SSH session) use a Reticle-owned headless browser instead: an agent acquires ' +
+    `one with ${ReticleTool.RUN} { tool: "${ReticleTool.LEASE}", args: { action: "acquire", ` +
+    `url: "${url}" } }, and from a shell \`RETICLE_PORT=${String(port)} npx @reticlehq/server ` +
+    `drive ${url}\` asks this daemon for the same thing. Otherwise open the url yourself, or set a ` +
+    'default browser.'
   );
 }

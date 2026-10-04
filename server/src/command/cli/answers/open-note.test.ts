@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { openFailureNote } from './open-note.js';
+import { openFailureNote, openLaunchRecovery } from './open-note.js';
 
 describe('reticle open, when it silently used a different daemon', () => {
   it('says so FIRST, and names both ports', () => {
@@ -31,5 +31,30 @@ describe('reticle open, when it silently used a different daemon', () => {
 
   it('never advises a bare `reticle` binary, which the npx install does not create', () => {
     expect(openFailureNote(4400, 4470)).not.toMatch(/`reticle (init|serve|open)\b/);
+  });
+});
+
+describe('reticle open, when the OS launcher itself could not run', () => {
+  const url = 'http://localhost:5173';
+
+  it('names the launcher that failed', () => {
+    expect(openLaunchRecovery(url, 'xdg-open', 4400)).toContain('`xdg-open`');
+  });
+
+  /** A container with no xdg-open has no default browser to set; a lease is the only way in. */
+  it('points at a Reticle-owned browser, not only at the OS', () => {
+    const recovery = openLaunchRecovery(url, 'xdg-open', 4400);
+    expect(recovery).toContain('reticle_lease');
+    expect(recovery).toContain(`url: "${url}"`);
+  });
+
+  it('gives the shell route on the same daemon', () => {
+    expect(openLaunchRecovery(url, 'xdg-open', 4470)).toContain(
+      `RETICLE_PORT=4470 npx @reticlehq/server drive ${url}`,
+    );
+  });
+
+  it('never advises a bare `reticle` binary, which the npx install does not create', () => {
+    expect(openLaunchRecovery(url, 'xdg-open', 4400)).not.toMatch(/`reticle (drive|open)\b/);
   });
 });
